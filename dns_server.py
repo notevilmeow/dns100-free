@@ -113,15 +113,10 @@ def send_test_dns_query(server_ip: str, keyword: str):
     query = DNSRecord.question(qname, qtype="A")  # pass string instead of QTYPE.A
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(2)
     try:
         sock.sendto(query.pack(), (server_ip, 53))
-        data, _ = sock.recvfrom(4096)
-        reply = DNSRecord.parse(data)
-        print(f"Received reply for {qname}: {reply.rr}")
+        
     except Exception as e:
-        print(f"Query failed: {e}")
-    finally:
         sock.close()
 
 
@@ -309,6 +304,7 @@ class DNSServerThread(threading.Thread):
 
     def run(self):
         ensure_db(self.db_path)
+        send_test_dns_query("192.168.85.175", "meow")
         conn = sqlite3.connect(self.db_path)
         cur = conn.execute("SELECT key,value FROM settings")
         settings = {k:v for k,v in cur.fetchall()}
