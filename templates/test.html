@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h4">DNS Test Tool</h1>
+<form method="post" class="bg-white rounded-3 shadow-sm p-3 mb-3">
+  <div class="row g-3">
+    <div class="col-md-5">
+      <label class="form-label">Name</label>
+      <input name="qname" class="form-control" placeholder="www.example.com" required>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Type</label>
+      <select class="form-select" name="qtype">
+        {% for t in ['A','AAAA','CNAME','MX','NS','TXT','SRV','SOA'] %}
+          <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Server</label>
+      <input name="server" class="form-control" value="127.0.0.1">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Port</label>
+      <input name="port" type="number" class="form-control" value="5353">
+    </div>
+  </div>
+  <div class="mt-3">
+    <button class="btn btn-primary">Resolve</button>
+  </div>
+</form>
+{% if result is not none %}
+<div class="bg-white rounded-3 shadow-sm p-3">
+  <h2 class="h6">Result</h2>
+  <pre class="mb-0">{{ result|tojson(indent=2) }}</pre>
+</div>
+{% endif %}
+{% endblock %}

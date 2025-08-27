@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3">Zones</h1>
+  <div>
+    <a href="{{ url_for('import_zone') }}" class="btn btn-outline-secondary me-2">Import Zone</a>
+    <a href="{{ url_for('new_zone') }}" class="btn btn-primary">New Zone</a>
+  </div>
+</div>
+<div class="row g-3">
+  {% for z in zones %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body">
+        <h5 class="card-title">{{ z.name }}</h5>
+        <p class="text-muted small mb-2">TTL {{ z.ttl }} • Serial {{ z.serial }}</p>
+        <a href="{{ url_for('view_zone', zone_id=z.id) }}" class="btn btn-sm btn-outline-primary">Manage</a>
+        <a href="{{ url_for('export_zone', zone_id=z.id) }}" class="btn btn-sm btn-outline-secondary">Export</a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+    <div class="col-12"><div class="alert alert-info">No zones yet. Create one!</div></div>
+  {% endfor %}
+</div>
+<hr class="my-4">
+<div class="row">
+  <div class="col-md-6">
+    <div class="p-3 bg-white rounded-3 shadow-sm">
+      <div class="d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Server</h2>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('settings') }}">Edit</a>
+      </div>
+      <div class="mt-2 small text-muted">
+        <div>Listen: {{ settings.listen_addr or '0.0.0.0' }}:{{ settings.listen_port or '5353' }}</div>
+        <div>Upstream: {{ settings.upstream or '—' }}</div>
+        <div>Default TTL: {{ settings.default_ttl or '300' }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="p-3 bg-white rounded-3 shadow-sm">
+      <h2 class="h5">Activity</h2>
+      <div class="display-6">{{ stats }}</div>
+      <div class="text-muted small">recent queries logged</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

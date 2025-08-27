@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h4">Import Zone (BIND)</h1>
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-3 shadow-sm p-3">
+  <div class="mb-3">
+    <input class="form-control" type="file" name="zonefile" accept=".zone,.txt" required>
+  </div>
+  <button class="btn btn-primary">Import</button>
+</form>
+{% endblock %}

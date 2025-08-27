@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h4">{{ 'Edit Record' if record else 'New Record' }} — {{ zone.name }}</h1>
+<form method="post" class="bg-white rounded-3 shadow-sm p-3">
+  <div class="row g-3">
+    <div class="col-md-5">
+      <label class="form-label">Name (FQDN)</label>
+      <input name="name" class="form-control" placeholder="www.example.com." value="{{ record.name if record else zone.name }}" required>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Type</label>
+      <select class="form-select" name="type">
+        {% for t in ['A','AAAA','CNAME','MX','NS','TXT','SRV'] %}
+          <option value="{{ t }}" {% if record and record.type==t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Content</label>
+      <input name="content" class="form-control" placeholder="Value or target" value="{{ record.content if record else '' }}" required>
+      <div class="form-text">For CNAME/NS/MX/SRV targets, end with a dot.</div>
+    </div>
+    <div class="col-md-1">
+      <label class="form-label">TTL</label>
+      <input name="ttl" type="number" class="form-control" value="{{ record.ttl if record else 0 }}">
+    </div>
+    <div class="col-md-1">
+      <label class="form-label">Prio</label>
+      <input name="priority" type="number" class="form-control" value="{{ record.priority if record else '' }}">
+    </div>
+  </div>
+  <div class="mt-3 d-flex gap-2">
+    <button class="btn btn-primary">Save</button>
+    <a href="{{ url_for('view_zone', zone_id=zone.id) }}" class="btn btn-outline-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

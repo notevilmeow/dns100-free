@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h1 class="h4 mb-0">{{ zone.name }}</h1>
+    <div class="text-muted small">TTL {{ zone.ttl }} • Serial {{ zone.serial }}</div>
+  </div>
+  <div>
+    <a href="{{ url_for('edit_zone', zone_id=zone.id) }}" class="btn btn-outline-secondary">Edit Zone</a>
+    <a href="{{ url_for('export_zone', zone_id=zone.id) }}" class="btn btn-outline-secondary">Export</a>
+    <a href="{{ url_for('new_record', zone_id=zone.id) }}" class="btn btn-primary">Add Record</a>
+  </div>
+</div>
+<div class="bg-white rounded-3 shadow-sm p-0 overflow-hidden">
+<table class="table table-striped align-middle mb-0">
+  <thead class="table-light">
+    <tr><th>Name</th><th>Type</th><th>Content</th><th>TTL</th><th>Prio</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for r in records %}
+    <tr>
+      <td><code>{{ r.name }}</code></td>
+      <td>{{ r.type }}</td>
+      <td><code>{{ r.content }}</code></td>
+      <td>{{ r.ttl or '—' }}</td>
+      <td>{{ r.priority or '—' }}</td>
+      <td class="text-end">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('edit_record', record_id=r.id) }}">Edit</a>
+        <form class="d-inline" method="post" action="{{ url_for('delete_record', record_id=r.id) }}" onsubmit="return confirm('Delete record?')">
+          <button class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6" class="text-center text-muted py-4">No records yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="mt-3">
+  <form method="post" action="{{ url_for('delete_zone', zone_id=zone.id) }}" onsubmit="return confirm('Delete zone and all records?')">
+    <button class="btn btn-outline-danger">Delete Zone</button>
+  </form>
+</div>
+{% endblock %}

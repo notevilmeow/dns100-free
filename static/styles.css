@@ -1,0 +1,6 @@
+/* Simple pleasant styling */
+body { --bs-primary: #6c5ce7; }
+.navbar { background: linear-gradient(90deg, #6c5ce7, #a66cff); }
+.card, .toast, .bg-white { border-radius: 1rem !important; }
+.btn, .form-control, .form-select { border-radius: 0.75rem; }
+code { background: #f6f8fa; padding: 2px 6px; border-radius: 6px; }

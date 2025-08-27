@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h4">Query Logs</h1>
+<div class="bg-white rounded-3 shadow-sm p-0 overflow-hidden">
+<table class="table table-hover align-middle mb-0" id="logtable">
+  <thead class="table-light">
+    <tr><th>Time</th><th>Client</th><th>QName</th><th>QType</th><th>RCODE</th><th>Answer</th><th>ms</th></tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="small">{{ r.ts }}</td>
+      <td class="small">{{ r.client_ip }}</td>
+      <td class="small"><code>{{ r.qname }}</code></td>
+      <td class="small">{{ r.qtype }}</td>
+      <td class="small">{{ r.rcode }}</td>
+      <td class="small">{{ r.answer }}</td>
+      <td class="small">{{ r.duration_ms }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<script>
+setInterval(async () => {
+  const res = await fetch('/api/logs');
+  const data = await res.json();
+  const tbody = document.querySelector('#logtable tbody');
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td class="small">${r.ts}</td>
+      <td class="small">${r.client_ip}</td>
+      <td class="small"><code>${r.qname}</code></td>
+      <td class="small">${r.qtype}</td>
+      <td class="small">${r.rcode}</td>
+      <td class="small">${r.answer}</td>
+      <td class="small">${r.duration_ms}</td>
+    </tr>
+  `).join('');
+}, 3000);
+</script>
+{% endblock %}
