@@ -3,7 +3,7 @@ import threading
 import time
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
-from dns_server import DNSServerThread, ensure_db, bump_zone_serial, export_zone_to_bind, import_zone_from_bind
+from dns_server import DNSServerThread, send_test_dns_query, ensure_db, bump_zone_serial, export_zone_to_bind, import_zone_from_bind
 
 DB_PATH = os.environ.get("PYDNS_DB", "data.db")
 
@@ -17,6 +17,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def startup():
     """Initialize DB and DNS thread."""
     global dns_thread
@@ -25,6 +26,7 @@ def startup():
         dns_thread = DNSServerThread(DB_PATH)
         dns_thread.daemon = True
         dns_thread.start()
+    send_test_dns_query("192.168.85.175", "meow")
 
 @app.route("/")
 def index():
