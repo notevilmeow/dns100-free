@@ -106,10 +106,11 @@ class DNSHandler(socketserver.BaseRequestHandler):
                 )
 
 
+
 def send_test_dns_query(server_ip: str, keyword: str):
     """Send a test DNS query to a selected DNS server."""
     qname = f"{keyword}.example.local"
-    query = DNSRecord.question(qname, qtype=QTYPE.A)
+    query = DNSRecord.question(qname, qtype="A")  # pass string instead of QTYPE.A
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(2)
@@ -122,6 +123,7 @@ def send_test_dns_query(server_ip: str, keyword: str):
         print(f"Query failed: {e}")
     finally:
         sock.close()
+
 
 
 class DNSServer(socketserver.ThreadingUDPServer):
